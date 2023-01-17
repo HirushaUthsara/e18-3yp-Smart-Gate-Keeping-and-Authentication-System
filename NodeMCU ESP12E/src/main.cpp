@@ -22,7 +22,7 @@ SoftwareSerial mySerial(Finger_Rx, Finger_Tx);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial); // fingerprint controll variable
 I2CKeyPad keyPad(0x20);                                        // keypad control variable
 uint8_t id;
-uint8_t operation;
+uint8_t mode;
 
 // Pin where the piezo buzzer is connected
 const int BUZZER_PIN = D8;
@@ -46,8 +46,9 @@ void deleteFingerprint(uint8_t id);
 void deleteDatabase();
 void display(String text, int cursor1, int cursor2);
 void ringBuzzer(int frequency, long duration);
+String getTime(void);
 
-// Define the WiFi credentials
+// Define the WiFi credentials hardcoded
 #define WIFI_SSID "Galaxy M02s5656"
 #define WIFI_PASSWORD "hiru2857756"
 
@@ -66,7 +67,7 @@ void setup()
   lcd.backlight(); // Make sure backlight is on
 
   Serial.println(">>>>>>>>>>>>>>>>System Boot Up>>>>>>>>>>>>>>>>>");
-  lcd.setCursor(0,1);
+  lcd.setCursor(0, 1);
   lcd.print("System Booting");
   delay(1500);
 
@@ -80,7 +81,7 @@ void setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     // ringBuzzer(2600,100);
-    lcd.setCursor(0,1);
+    lcd.setCursor(0, 1);
     lcd.print(".");
     Serial.print(".");
 
@@ -89,7 +90,7 @@ void setup()
 
   Serial.println();
   lcd.clear();
-  lcd.setCursor(0,0);
+  lcd.setCursor(0, 0);
   lcd.print("--Connected---");
   Serial.println("Connected to Wifi");
   delay(1000);
@@ -105,10 +106,10 @@ void setup()
   if (keyPad.begin() == false)
   {
     Serial.println("\nERROR: cannot communicate to keypad.\nPlease reboot.\n");
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
     lcd.print("KeyPad Error!");
     delay(1000);
-    ringBuzzer(2600,2000);
+    ringBuzzer(2600, 2000);
     setup();
   }
 
@@ -117,16 +118,16 @@ void setup()
     ;
   delay(200);
   Serial.println("..Welcome to ACCOL..");
-  
+
   finger.begin(57600);
   if (!detectFingerprintScanner()) // could not detect any fingerprint scanner
   {
     lcd.clear();
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
     lcd.print("System Error");
     delay(2000);
     Serial.println("Could not Found a Fingerprint Scanner");
-    ringBuzzer(2600,2500);
+    ringBuzzer(2600, 2500);
     Serial.println("System Reboot");
 
     setup();
@@ -139,7 +140,6 @@ void setup()
 
 void loop()
 {
-  int p = -1;
   /*   Network Connection  */
   // handle wifi connection errors and reconnect
   if (WiFi.status() != WL_CONNECTED)
@@ -154,43 +154,43 @@ void loop()
     Serial.println();
   }
 
-   /*   Basic Program   */
-  Serial.println("Account Password:");
-  lcd.clear();
-  // operation = 0;
-  // while (operation)
-  // {
-  //   Serial.println("Select Mode :");
-  //   delay(1000);
-  //   Serial.println("1. Registration   2. Access Control");
-  //   display("Select Mode:", 0, 1);
-  //   delay(1000);
-  //   lcd.clear();
+  /*   Basic Program   */
+  Serial.println("Account Password:"); // acc password
+  int accPassword = userIn().toInt();
+  Serial.println("Device Password:");
+  int devicePassword = userIn().toInt();
 
-  // }
+  mode = 0;
+  while (1)
+  {
+    Serial.println("Select Mode :");
+    delay(1000);
+    Serial.println("A-Registration   B-Access Control");
 
-  // operation = userIn().toInt();
-  // Serial.println(operation);
 
-  // if (operation == 2)
-  // {
-  //   enrollFingerprint();
-  // }
-  // else if (operation == 3)
-  // {
-  //   id = accessControl();
-  // }
-  // else if (operation == 4)       // back to reset mode
-  // {
-  //   loop();
-  // }
-  // else
-  // {
-  //   display("Invalid Input!",0,0);
-  // }
+  }
+
+  
 }
 
-// returns the verified person id if valid otherwise returns -1
+String getTime(void){
+  timeClient.update();
+  return timeClient.getFormattedTime();
+}
+
+int accessControlMode()
+{
+
+  return 0;
+}
+
+int registrationMOde(void)
+{
+  return 0;
+}
+
+// returns the verified person id if valid otherwise returns 0 
+// in case of error returns -1 
 int accessControl(void)
 {
   int p = -1;
@@ -247,11 +247,17 @@ int accessControl(void)
     return finger.fingerID;                         // return the fingerprint id of that person
     delay(5000);
   }
+  else if (p == FINGERPRINT_NOTFOUND)
+  {
+    Serial.println("Access Denied");
+    return 0;
+  }
   else
   {
-    Serial.println(" Access Denied "); // not a verified person
+    Serial.println("Error! Try Again..");
     return -1;
   }
+  
 }
 
 bool detectFingerprintScanner()
