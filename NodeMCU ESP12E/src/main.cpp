@@ -4,6 +4,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <ESP8266WiFi.h>
 #include <Wire.h>
+
 // time calculate libraries
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -57,39 +58,58 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 void setup()
 {
   Serial.begin(115200); // baud rate set to 115200
-  delay(100);
-
-  Serial.println(">>>>>>>>>>>>>>>>System Boot Up>>>>>>>>>>>>>>>>>");
-
-  /*  Wifi Set up for the internet   */
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to a Network");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(250);
-  }
-  Serial.println();
-  Serial.println("Connected to Wifi");
-  WiFi.setAutoConnect(true);   //  automatically connect to the last-connected network after a reboot or power-on
-  WiFi.setAutoReconnect(true); // automatically reconnect to the network if the connection is lost
+  delay(500);
 
   /* Set up for the LCD 16x2 display */
   lcd.init();
   lcd.clear();
   lcd.backlight(); // Make sure backlight is on
 
+  Serial.println(">>>>>>>>>>>>>>>>System Boot Up>>>>>>>>>>>>>>>>>");
+  lcd.setCursor(0,1);
+  lcd.print("System Booting");
+  delay(1500);
+
+  /*  Wifi Set up for the internet   */
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  lcd.clear();
+  Serial.print("Connecting to a Network");
+  lcd.clear();
+  lcd.autoscroll();
+  lcd.print("Connecting WiFi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    // ringBuzzer(2600,100);
+    lcd.setCursor(0,1);
+    lcd.print(".");
+    Serial.print(".");
+
+    delay(200);
+  }
+
+  Serial.println();
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--Connected---");
+  Serial.println("Connected to Wifi");
+  delay(1000);
+  WiFi.setAutoConnect(true);   //  automatically connect to the last-connected network after a reboot or power-on
+  WiFi.setAutoReconnect(true); // automatically reconnect to the network if the connection is lost
+
   /* Set up for 4x4 keypad */
   delay(1000);
-  Serial.println(__FILE__);
+  // Serial.println(__FILE__);
 
   Wire.begin();
   Wire.setClock(400000);
   if (keyPad.begin() == false)
   {
     Serial.println("\nERROR: cannot communicate to keypad.\nPlease reboot.\n");
-    while (1)
-      ;
+    lcd.setCursor(0,0);
+    lcd.print("KeyPad Error!");
+    delay(1000);
+    ringBuzzer(2600,2000);
+    setup();
   }
 
   /* Set up for the Fingerprint sensor */
@@ -97,15 +117,21 @@ void setup()
     ;
   delay(200);
   Serial.println("..Welcome to ACCOL..");
+  
   finger.begin(57600);
   if (!detectFingerprintScanner()) // could not detect any fingerprint scanner
   {
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("System Error");
+    delay(2000);
     Serial.println("Could not Found a Fingerprint Scanner");
+    ringBuzzer(2600,2500);
     Serial.println("System Reboot");
 
     setup();
   }
-
+  delay(1000);
   verifyScannerParameters();
   // time client for ntp
   timeClient.begin();
@@ -128,16 +154,18 @@ void loop()
     Serial.println();
   }
 
-  // /*    Fingerprint program   */
-  operation = 0;
-  while (!operation)
-  {
-    Serial.println("Select Mode :");
-    delay(1000);
-    Serial.println("1. Registration   2. Access Control");
-    display("Select Mode:", 0, 1);
-    delay(1000);
-    lcd.clear();
+   /*   Basic Program   */
+  Serial.println("Account Password:");
+  lcd.clear();
+  // operation = 0;
+  // while (operation)
+  // {
+  //   Serial.println("Select Mode :");
+  //   delay(1000);
+  //   Serial.println("1. Registration   2. Access Control");
+  //   display("Select Mode:", 0, 1);
+  //   delay(1000);
+  //   lcd.clear();
 
   // }
 
